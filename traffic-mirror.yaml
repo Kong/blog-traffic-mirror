@@ -1,0 +1,40 @@
+apiVersion: kuma.io/v1alpha1
+kind: ProxyTemplate
+mesh: default
+metadata:
+  name: traffic-mirror
+spec:
+  selectors:
+    - match:
+        kuma.io/service: mockbin_myblog_svc_3000
+  conf:
+    imports:
+      - default-proxy
+    modifications:
+    - networkFilter:
+        operation: patch
+        match:
+          name: envoy.filters.network.http_connection_manager
+          origin: inbound
+          listenerTags:
+            kuma.io/service: mockbin_myblog_svc_3000
+        value: |
+          name: envoy.filters.network.http_connection_manager
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+            stat_prefix: mockbin_myblog_svc_3000
+            route_config:
+              name: inbound:mockbin_myblog_svc_3000
+              virtual_hosts:
+              - name: mockbin_myblog_svc_3000
+                domains: ["mockbin.myblog.svc.3000.mesh"]
+                routes:
+                - match:
+                    prefix: "/requests"
+                  route:
+                    cluster: localhost:3000
+                    request_mirror_policies:
+                    - cluster: mockbin-v2_myblog_svc_3000
+                      runtime_fraction:
+                        default_value:
+                          numerator: 100

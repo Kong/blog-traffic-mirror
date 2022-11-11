@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mockbin
+  annotations:
+    konghq.com/strip-path: "true"
+    konghq.com/preserve-host: "false"
+    kubernetes.io/ingress.class: kong
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          service:
+            name: mockbin-dot-mesh
+            port:
+              number: 80
+        pathType: ImplementationSpecific
+        path: /mockbin
